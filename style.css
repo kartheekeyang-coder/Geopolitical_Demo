@@ -1,4 +1,4 @@
-/* Geopolitical Supply Chain Risk Decision Agent - Dark Theme & Glassmorphism Design */
+﻿/* Geopolitical Supply Chain Risk Decision Agent - Dark Theme & Glassmorphism Design */
 
 :root {
     --bg-primary: #0a0e17;
@@ -265,14 +265,22 @@ body.dark-theme {
 }
 
 .kpi-card {
-    background: var(--bg-glass);
-    backdrop-filter: blur(12px);
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(17, 24, 39, 0.8));
+    backdrop-filter: blur(16px);
     border: 1px solid var(--border-glass);
     border-radius: var(--radius-lg);
-    padding: 20px;
+    padding: 24px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 18px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 .kpi-icon {
@@ -326,7 +334,7 @@ body.dark-theme {
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    gap: 24px;
+    gap: 32px;
 }
 
 .grid-col-4 { grid-column: span 4; }
@@ -338,12 +346,17 @@ body.dark-theme {
 
 /* Glass Cards */
 .glass-card {
-    background: var(--bg-glass);
-    backdrop-filter: blur(16px);
-    border: 1px solid var(--border-glass);
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.5), rgba(17, 24, 39, 0.8));
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: var(--radius-lg);
-    padding: 24px;
-    box-shadow: var(--shadow-soft);
+    padding: 32px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .margin-top-md {
@@ -383,7 +396,7 @@ body.dark-theme {
 }
 
 .data-table th {
-    padding: 12px 16px;
+    padding: 16px 20px;
     font-size: 12px;
     font-weight: 600;
     color: var(--text-muted);
@@ -393,13 +406,13 @@ body.dark-theme {
 }
 
 .data-table td {
-    padding: 14px 16px;
+    padding: 16px 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     font-size: 14px;
 }
 
 .data-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 /* Badges */
@@ -429,11 +442,17 @@ body.dark-theme {
 .connector-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
+    gap: 14px;
+    padding: 16px;
     background: rgba(255, 255, 255, 0.02);
     border-radius: var(--radius-md);
     border: 1px solid var(--border-glass);
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.connector-item:hover {
+    transform: translateX(4px);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .connector-dot {
@@ -788,3 +807,101 @@ input[type="range"] {
     font-size: 12px;
     color: var(--text-muted);
 }
+/* Modal Styling */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center; }
+.modal-overlay.active { display: flex; }
+.modal-content { max-width: 900px; width: 90%; max-height: 90vh; overflow-y: auto; position: relative; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 16px; }
+.modal-close { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
+.modal-close:hover { color: var(--text-primary); }
+.jvm-tooltip { background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; font-family: 'Inter', sans-serif; border-radius: 6px; padding: 8px 12px; }
+
+/* Enhanced Glass Aesthetics */
+.glass-card {
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.05) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+}
+
+/* Glowing KPI Text */
+.kpi-value {
+    text-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+}
+.kpi-card:nth-child(4) .kpi-value { 
+    text-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+}
+.kpi-card:nth-child(3) .kpi-value { 
+    text-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+}
+
+/* Page Animations */
+@keyframes fadeInSlide {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.tab-page.active {
+    animation: fadeInSlide 0.5s ease-out forwards;
+}
+
+
+/* Dependency Cards */
+.dependency-card {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 12px;
+    transition: transform 0.2s, background 0.2s;
+}
+.dependency-card:hover {
+    transform: translateX(4px);
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(56, 189, 248, 0.4);
+}
+.dep-path {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #e2e8f0;
+}
+.dep-arrow {
+    color: #475569;
+    font-size: 10px;
+}
+.dep-node {
+    background: rgba(15, 23, 42, 0.6);
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.dep-metrics {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.dep-bar-container {
+    flex: 1;
+    height: 6px;
+    background: rgba(15, 23, 42, 0.8);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.dep-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    box-shadow: 0 0 8px currentColor;
+}
+.dep-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+    min-width: 140px;
+    text-align: right;
+}
+

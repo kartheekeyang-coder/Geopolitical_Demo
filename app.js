@@ -122,6 +122,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 altSources: 0,
                 esgRating: 'AA',
                 creditScore: 85
+            },
+            {
+                id: 'SUP-105',
+                name: 'Foxconn Electronics',
+                country: 'TW',
+                sku: 'SKU-3321 (Industrial Motherboard)',
+                plant: 'PLANT-US-1 (Austin High-Tech Assembly)',
+                dependency: 55.0,
+                spendShare: 0.25,
+                invCover: 20.0,
+                soleSource: false,
+                revImpactM: 25.0,
+                stopRisk: 0.70,
+                altSources: 2,
+                esgRating: 'A',
+                creditScore: 81
+            },
+            {
+                id: 'SUP-106',
+                name: 'Seoul Semiconductors',
+                country: 'KR',
+                sku: 'SKU-5544 (OLED Touch Displays)',
+                plant: 'PLANT-KR-2 (Seoul Display Fab)',
+                dependency: 40.0,
+                spendShare: 0.15,
+                invCover: 30.0,
+                soleSource: false,
+                revImpactM: 10.0,
+                stopRisk: 0.30,
+                altSources: 3,
+                esgRating: 'B+',
+                creditScore: 78
+            },
+            {
+                id: 'SUP-107',
+                name: 'Tokyo Motors',
+                country: 'JP',
+                sku: 'SKU-4433 (Precision Actuators)',
+                plant: 'PLANT-JP-1 (Nagoya Robotics)',
+                dependency: 20.0,
+                spendShare: 0.10,
+                invCover: 60.0,
+                soleSource: false,
+                revImpactM: 5.0,
+                stopRisk: 0.20,
+                altSources: 5,
+                esgRating: 'AA',
+                creditScore: 92
             }
         ],
         actions: [
@@ -220,6 +268,14 @@ document.addEventListener('DOMContentLoaded', () => {
             pageTitle.textContent = pageTitles[targetTab];
         }
         state.activeTab = targetTab;
+
+        // Force ECharts to resize when its container becomes visible
+        if (targetTab === 'heatmap') {
+            setTimeout(() => {
+                if (typeof heatmapInstance !== 'undefined' && heatmapInstance) heatmapInstance.resize();
+                if (typeof graphInstance !== 'undefined' && graphInstance) graphInstance.resize();
+            }, 100);
+        }
     }
 
     navButtons.forEach(btn => {
@@ -319,61 +375,159 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 5. Render Heatmap & Graph
+    let heatmapInstance = null;
+    let graphInstance = null;
+    
     function renderHeatmapAndGraph() {
-        const mapContainer = document.getElementById('geo-map-visual');
+        const mapContainer = document.getElementById('heatmap-container');
         const graphContainer = document.getElementById('graph-view-container');
 
         if (mapContainer) {
-            mapContainer.innerHTML = `
-                <div class="country-risk-list">
-                    <div class="country-card">
-                        <div class="country-flag-name">
-                            <i class="fa-solid fa-flag color-warning"></i> Taiwan (TW)
-                        </div>
-                        <span class="badge badge-danger">Critical Risk (Score: 78.2)</span>
-                    </div>
-                    <div class="country-card">
-                        <div class="country-flag-name">
-                            <i class="fa-solid fa-flag color-warning"></i> China (CN)
-                        </div>
-                        <span class="badge badge-warning">Elevated Risk (Score: 54.0)</span>
-                    </div>
-                    <div class="country-card">
-                        <div class="country-flag-name">
-                            <i class="fa-solid fa-flag"></i> Germany (DE)
-                        </div>
-                        <span class="badge badge-warning">Medium Risk (Score: 48.5)</span>
-                    </div>
-                    <div class="country-card">
-                        <div class="country-flag-name">
-                            <i class="fa-solid fa-flag"></i> Netherlands (NL)
-                        </div>
-                        <span class="badge badge-emerald">Low Risk (Score: 18.4)</span>
-                    </div>
-                </div>
-                <div style="margin-top:20px; font-size:12px; color:var(--text-muted); text-align:center;">
-                    <i class="fa-solid fa-globe"></i> Heatmap weighted by supplier spend share, inventory cover, and Hugging Face event feeds.
-                </div>
-            `;
+            if (!heatmapInstance) {
+                heatmapInstance = echarts.init(mapContainer);
+                window.addEventListener('resize', () => heatmapInstance.resize());
+            }
+
+            const countryScores = {};
+            state.suppliers.forEach(s => {
+                const sig = state.signals.find(sig => sig.country === s.country);
+                const riskInfo = calculateScore(s, sig);
+                if (!countryScores[s.country] || riskInfo.finalScore > countryScores[s.country]) {
+                    countryScores[s.country] = riskInfo.finalScore;
+                }
+            });
+
+            // Map ISO2 to full names for ECharts world map
+            const nameMap = {
+                'CN': 'China',
+                'TW': 'Taiwan',
+                'DE': 'Germany',
+                'NL': 'Netherlands',
+                'US': 'United States',
+                'KR': 'South Korea',
+                'JP': 'Japan'
+            };
+
+            const scatterData = [];
+            const coords = {
+                'China': [104.1954, 35.8617],
+                'Taiwan': [120.9605, 23.6978],
+                'Germany': [10.4515, 51.1657],
+                'Netherlands': [5.2913, 52.1326],
+                'South Korea': [127.7669, 35.9078],
+                'Japan': [138.2529, 36.2048]
+            };
+
+            for (const [code, score] of Object.entries(countryScores)) {
+                const countryName = nameMap[code] || code;
+                scatterData.push({
+                    name: countryName,
+                    value: [...(coords[countryName]||[0,0]), score],
+                    riskLevel: score > 75 ? 'Critical' : (score > 40 ? 'High' : 'Low')
+                });
+            }
+
+            const option = {
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function (params) {
+                        if (params.seriesType === 'effectScatter' || params.seriesType === 'scatter') {
+                            return `<strong>${params.data.name}</strong><br/>Risk Score: ${params.data.value[2].toFixed(1)} <span class="badge ${params.data.riskLevel==='Critical'?'badge-danger':(params.data.riskLevel==='High'?'badge-warning':'badge-success')}">${params.data.riskLevel}</span>`;
+                        }
+                        return params.name;
+                    },
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    textStyle: { color: '#fff' }
+                },
+                geo: {
+                    map: 'world',
+                    roam: true,
+                    zoom: 1.2,
+                    itemStyle: {
+                        areaColor: '#1e293b',
+                        borderColor: '#0ea5e9',
+                        borderWidth: 0.5
+                    },
+                    emphasis: {
+                        itemStyle: { areaColor: '#334155' },
+                        label: { show: false }
+                    }
+                },
+                series: [
+                    {
+                        name: 'High Risk Nodes',
+                        type: 'effectScatter',
+                        coordinateSystem: 'geo',
+                        data: scatterData.filter(d => d.value[2] > 40),
+                        symbolSize: 8, // Increased by ~50%
+                        itemStyle: {
+                            color: function(params) {
+                                return params.data.riskLevel === 'Critical' ? '#ef4444' : '#f59e0b';
+                            },
+                            shadowBlur: 8,
+                            shadowColor: '#000'
+                        },
+                        showEffectOn: 'render',
+                        rippleEffect: { brushType: 'stroke', scale: 2.5 }, 
+                        zlevel: 1
+                    },
+                    {
+                        name: 'Safe Nodes',
+                        type: 'scatter',
+                        coordinateSystem: 'geo',
+                        data: scatterData.filter(d => d.value[2] <= 40),
+                        symbolSize: 6, // Increased by 50%
+                        itemStyle: { color: '#10b981' }
+                    }
+                ]
+            };
+            heatmapInstance.setOption(option);
         }
 
         if (graphContainer) {
-            graphContainer.innerHTML = state.suppliers.map(sup => `
-                <div class="graph-tree-node">
-                    <div class="graph-node-title"><i class="fa-solid fa-building"></i> Country: ${sup.country} → Supplier: ${sup.name}</div>
-                    <div class="graph-node-children">
-                        <div class="graph-node-child">
-                            <span><i class="fa-solid fa-box"></i> SKU: ${sup.sku}</span>
-                            <span>Dep: ${sup.dependency}%</span>
+        if (graphContainer) {
+            // Destroy any existing ECharts instance
+            if (graphInstance) {
+                graphInstance.dispose();
+                graphInstance = null;
+            }
+
+            let htmlCards = '';
+            
+            // Sort suppliers by dependency (highest first)
+            const sortedSuppliers = [...state.suppliers].sort((a, b) => b.dependency - a.dependency);
+
+            sortedSuppliers.forEach(s => {
+                const sig = state.signals.find(sig => sig.country === s.country);
+                const riskInfo = calculateScore(s, sig);
+                let countryBadgeClass = 'badge-success'; // Low Risk
+                if (riskInfo.finalScore > 75) countryBadgeClass = 'badge-danger'; // Critical
+                else if (riskInfo.finalScore > 40) countryBadgeClass = 'badge-warning'; // High
+
+                htmlCards += `
+                    <div class="dependency-card">
+                        <div class="dep-path">
+                            <span class="badge ${countryBadgeClass}"><i class="fa-solid fa-globe"></i> ${s.country}</span> 
+                            <i class="fa-solid fa-arrow-right dep-arrow"></i> 
+                            <span class="dep-node"><i class="fa-solid fa-building"></i> ${s.name}</span>
+                            <i class="fa-solid fa-arrow-right dep-arrow"></i> 
+                            <span class="dep-node"><i class="fa-solid fa-box"></i> ${s.sku.split('(')[0].trim()}</span>
                         </div>
-                        <div class="graph-node-child">
-                            <span><i class="fa-solid fa-industry"></i> Impacted Plant: ${sup.plant}</span>
-                            <span>Cover: ${sup.invCover}d</span>
+                        <div class="dep-metrics">
+                            <div class="dep-bar-container">
+                                <div class="dep-bar-fill" style="width: ${s.dependency}%; background: ${s.dependency > 50 ? '#ef4444' : (s.dependency > 20 ? '#f59e0b' : '#10b981')}"></div>
+                            </div>
+                            <span class="dep-value">${s.dependency}% Dependency Flow</span>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            });
+
+            graphContainer.innerHTML = htmlCards;
         }
+    }
     }
 
     // 6. What-If Calculator Sliders
@@ -382,6 +536,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const sliderC = document.getElementById('slider-c');
     const sliderR = document.getElementById('slider-r');
     const sliderAlt = document.getElementById('slider-alt');
+
+    if (sliderP) sliderP.addEventListener('input', updateCalculator);
+    if (sliderE) sliderE.addEventListener('input', updateCalculator);
+    if (sliderC) sliderC.addEventListener('input', updateCalculator);
+    if (sliderR) sliderR.addEventListener('input', updateCalculator);
+    if (sliderAlt) sliderAlt.addEventListener('input', updateCalculator);
 
     function updateCalculator() {
         if (!sliderP) return;
@@ -400,14 +560,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const res = (alt * 0.3) + Math.min(rDays / 30.0, 1.0) * 0.7;
         const resVal = Math.max(res, 0.1);
+        const grossRisk = (p * e * c) * 100.0;
         const rawScore = (p * e * c) / resVal;
         const score = Math.min(Math.round(rawScore * 100.0 * 10) / 10, 100.0);
 
         const scoreDisplay = document.getElementById('calc-result-score');
         const levelDisplay = document.getElementById('calc-result-level');
-        const formulaDisplay = document.getElementById('calc-result-formula');
+        const grossDisplay = document.getElementById('calc-gross');
+        const resDisplay = document.getElementById('calc-resilience');
 
         if (scoreDisplay) scoreDisplay.textContent = score.toFixed(1);
+        if (grossDisplay) grossDisplay.textContent = grossRisk.toFixed(1);
+        if (resDisplay) resDisplay.textContent = resVal.toFixed(2);
         
         let levelText = 'Low Exposure';
         let badgeClass = 'badge-emerald';
@@ -419,26 +583,79 @@ document.addEventListener('DOMContentLoaded', () => {
             levelDisplay.textContent = levelText;
             levelDisplay.className = `calc-badge badge ${badgeClass}`;
         }
-
-        if (formulaDisplay) {
-            formulaDisplay.textContent = `Formula: (${p.toFixed(2)} × ${e.toFixed(2)} × ${c.toFixed(2)}) / ${resVal.toFixed(2)} = ${score.toFixed(1)}`;
-        }
     }
 
     [sliderP, sliderE, sliderC, sliderR, sliderAlt].forEach(s => {
         if (s) s.addEventListener('input', updateCalculator);
     });
 
+    const supplierSelect = document.getElementById('calc-supplier-select');
+    if (supplierSelect) {
+        state.suppliers.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = `${s.name} (${s.sku.split('(')[0].trim()})`;
+            supplierSelect.appendChild(opt);
+        });
+
+        supplierSelect.addEventListener('change', (e) => {
+            const supplierId = e.target.value;
+            if (!supplierId) return; // Generic Simulation
+
+            const s = state.suppliers.find(sup => sup.id === supplierId);
+            if (s) {
+                // Determine probability based on current signals for that country
+                const sig = state.signals.find(sig => sig.country === s.country);
+                let p = s.stopRisk * 0.5; // Base probability without signal
+                if (sig) p = sig.credibility; // Override with active signal probability
+                
+                if (sliderP) sliderP.value = p;
+                if (sliderE) sliderE.value = s.dependency;
+                if (sliderC) sliderC.value = s.stopRisk;
+                if (sliderR) sliderR.value = s.invCover;
+                if (sliderAlt) sliderAlt.value = s.altSources;
+                updateCalculator();
+            }
+        });
+    }
+
     // 7. Hugging Face Dataset Ingest Handler
     const btnHfIngest = document.getElementById('btn-hf-ingest');
     const simConsole = document.getElementById('sim-console-output');
 
-    function logConsole(msg, type = 'info') {
+    function logConsole(msg, type = 'info', payload = null) {
         if (!simConsole) return;
         const line = document.createElement('div');
         line.className = `console-line ${type}`;
         line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
         simConsole.appendChild(line);
+        
+        if (payload) {
+            const feedContainer = document.getElementById('live-news-feed');
+            if (feedContainer) {
+                if (feedContainer.innerHTML.includes('Waiting for live news ingestion')) {
+                    feedContainer.innerHTML = '';
+                }
+                const card = document.createElement('div');
+                card.className = 'glass-card';
+                card.style.padding = '15px';
+                card.style.borderLeft = '4px solid var(--color-emerald)';
+                
+                card.innerHTML = `
+                    <div style="margin-bottom: 8px;"><strong>📍 Location:</strong> ${payload.country || 'Global'}</div>
+                    <div style="margin-bottom: 8px;"><strong>⚠️ Event Type:</strong> <span style="color: var(--color-warning);">${payload.type || 'Alert'}</span></div>
+                    <div style="margin-bottom: 12px; font-size: 1.05em;"><strong>📰 Headline:</strong> <span style="color: #fff;">${payload.summary || 'No details provided.'}</span></div>
+                    <div style="margin-bottom: 12px; font-size: 0.85em; color: var(--color-slate);"><strong>📡 Source:</strong> ${payload.source || 'External System'}</div>
+                    <div style="display: flex; gap: 15px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.85em; color: var(--color-sky);">
+                        <div><strong>AI Confidence:</strong> ${(payload.confidence ? payload.confidence * 100 : 0).toFixed(0)}%</div>
+                        <div><strong>Trend:</strong> ${payload.trend || 'Stable'}</div>
+                        <div><strong>Date:</strong> ${payload.date || new Date().toLocaleDateString()}</div>
+                    </div>
+                `;
+                feedContainer.prepend(card);
+            }
+        }
+        
         simConsole.scrollTop = simConsole.scrollHeight;
     }
 
@@ -460,7 +677,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
 
                 state.signals.unshift(hfEvt);
-                logConsole(`Layer 1: Successfully ingested HuggingFace record ${hfEvt.id}`, "success");
+                logConsole(`Layer 1: Successfully ingested HuggingFace record ${hfEvt.id}`, "success", hfEvt);
                 logConsole(`Layer 2: Event tagged as Sanctions/Trade Barrier, Escalation: Rising`, "info");
 
                 const impacted = state.suppliers.filter(s => s.country === 'TW');
@@ -489,8 +706,64 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderWatchlist();
                 renderActions();
                 renderMasterScoreTable();
-                alert("Successfully ingested sample geopolitical dataset records from Hugging Face!");
+                updateKPICounters();
+                alert("Successfully ingested sample geopolitical dataset records from Hugging Face!\n\nClick OK, then scroll down and look at the black Terminal Console to see the raw JSON data that was ingested.");
             }, 800);
+        });
+    }
+
+    // 7b. Live RSS Feed Ingest Handler
+    const btnRssIngest = document.getElementById('btn-rss-ingest');
+    if (btnRssIngest) {
+        btnRssIngest.addEventListener('click', async () => {
+            logConsole("Connecting to BBC World News Live RSS Feed via Python Backend...", "info");
+            
+            try {
+                const response = await fetch('/api/live-risks');
+                const newLiveEvents = await response.json();
+                
+                logConsole(`Layer 1: Successfully ingested ${newLiveEvents.length} live records from internet.`, "success");
+                
+                newLiveEvents.forEach(evt => {
+                    logConsole(`Layer 2: Event tagged as ${evt.type}, Source: ${evt.source}`, "info", evt);
+                    
+                    state.signals.unshift(evt);
+                    
+                    const impacted = state.suppliers.filter(s => s.country === evt.country);
+                    logConsole(`Layer 3: Graph Linker mapped live signal to ${impacted.length} supplier nodes in ${evt.country}`, "warn");
+                    
+                    impacted.forEach(sup => {
+                        const score = calculateScore(sup, evt);
+                        logConsole(`Layer 4: Calculated score for '${sup.name}': Score = ${score.finalScore} (${score.level})`, score.level === 'Critical' ? 'danger' : 'warn');
+
+                        if (score.level === 'Critical' || score.level === 'High') {
+                            const newAct = {
+                                id: `ACT-RSS-${Math.floor(100 + Math.random() * 900)}`,
+                                entityName: sup.name,
+                                owner: 'Procurement & Legal',
+                                recommendation: `LIVE SCRM TRIGGER: Expedite safety stock for SKU '${sup.sku}' based on live geopolitical event.`,
+                                rule: `ISO-SCRM-R1 (Live Event: ${evt.type})`,
+                                dueDays: 1,
+                                status: 'Proposed',
+                                confidence: evt.confidence
+                            };
+                            state.actions.unshift(newAct);
+                            logConsole(`Layer 5: Action Orchestrated -> Action ID [${newAct.id}] assigned.`, 'success');
+                        }
+                    });
+                });
+                
+                renderWatchlist();
+                renderActions();
+                renderMasterScoreTable();
+                updateKPICounters();
+                
+                alert(`Successfully pulled ${newLiveEvents.length} live news events from the internet! \n\nClick OK, then scroll down and look at the black Terminal Console to see the raw JSON data for all ${newLiveEvents.length} feeds!`);
+                
+            } catch (error) {
+                logConsole(`Error fetching live RSS feed: ${error}`, "danger");
+                alert("Failed to fetch live RSS feed. Make sure the Python backend (server.py) is running on port 8000.");
+            }
         });
     }
 
@@ -609,6 +882,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderWatchlist();
             renderActions();
             renderMasterScoreTable();
+            updateKPICounters();
         });
     }
 
@@ -641,10 +915,242 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Active Signals Modal Logic ---
+    const signalsModal = document.getElementById('signals-modal');
+    const closeSignalsModalBtn = document.getElementById('close-signals-modal');
+
+    function renderSignalsModal() {
+        const tbody = document.querySelector('#active-signals-table tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        state.signals.forEach(sig => {
+            const impactedSkus = state.suppliers
+                .filter(s => s.country === sig.country)
+                .map(s => `<code>${s.sku}</code>`)
+                .join('<br>');
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${sig.date}</td>
+                <td><span class="badge badge-info">${sig.source.split(' ')[0]}</span></td>
+                <td><strong>${sig.type}</strong><br><span style="font-size:11px; color:var(--text-muted);">${sig.summary}</span></td>
+                <td><strong class="color-warning">${sig.country}</strong></td>
+                <td><span class="badge ${sig.trend === 'Rising' ? 'badge-danger' : 'badge-warning'}">${sig.trend}</span></td>
+                <td>${impactedSkus || '<span style="color:var(--text-muted)">None</span>'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function openSignalsModal() {
+        renderSignalsModal();
+        if (signalsModal) signalsModal.classList.add('active');
+    }
+
+    if (closeSignalsModalBtn) {
+        closeSignalsModalBtn.addEventListener('click', () => {
+            if (signalsModal) signalsModal.classList.remove('active');
+        });
+    }
+
+    window.addEventListener('click', (e) => {
+        if (e.target === signalsModal) {
+            signalsModal.classList.remove('active');
+        }
+    });
+
+    // --- Critical SKUs Modal Logic ---
+    const skusModal = document.getElementById('skus-modal');
+    const closeSkusModalBtn = document.getElementById('close-skus-modal');
+
+    function renderSkusModal() {
+        const tbody = document.querySelector('#skus-table tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        state.suppliers.forEach(s => {
+            const riskInfo = calculateScore(s, state.signals.find(sig => sig.country === s.country));
+            let scoreBadgeClass = 'badge-success';
+            if (riskInfo.finalScore > 75) scoreBadgeClass = 'badge-danger';
+            else if (riskInfo.finalScore > 40) scoreBadgeClass = 'badge-warning';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${s.sku}</strong></td>
+                <td>${s.name}</td>
+                <td><strong class="color-warning">${s.country}</strong></td>
+                <td>${s.dependency}%</td>
+                <td>${s.invCover} Days</td>
+                <td><span class="badge ${scoreBadgeClass}">${riskInfo.finalScore.toFixed(1)}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function openSkusModal() {
+        renderSkusModal();
+        if (skusModal) skusModal.classList.add('active');
+    }
+
+    if (closeSkusModalBtn) {
+        closeSkusModalBtn.addEventListener('click', () => {
+            if (skusModal) skusModal.classList.remove('active');
+        });
+    }
+
+    window.addEventListener('click', (e) => {
+        if (e.target === skusModal) {
+            skusModal.classList.remove('active');
+        }
+    });
+
+    // --- Revenue Impact Modal Logic ---
+    const revenueModal = document.getElementById('revenue-modal');
+    const closeRevenueModalBtn = document.getElementById('close-revenue-modal');
+
+    function renderRevenueModal() {
+        const tbody = document.querySelector('#revenue-table tbody');
+        const totalCell = document.getElementById('revenue-total-cell');
+        if (!tbody || !totalCell) return;
+        tbody.innerHTML = '';
+
+        let totalRevenue = 0;
+
+        state.suppliers.forEach(s => {
+            totalRevenue += s.revImpactM;
+            const soleSourceBadge = s.soleSource ? '<span class="badge badge-danger">Yes</span>' : '<span class="badge badge-success">No</span>';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${s.name}</strong></td>
+                <td><code>${s.sku}</code></td>
+                <td>${s.dependency}%</td>
+                <td>${soleSourceBadge}</td>
+                <td style="color: var(--color-emerald); font-weight: bold;">$${s.revImpactM.toFixed(1)}M</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        totalCell.textContent = `$${totalRevenue.toFixed(1)}M`;
+    }
+
+    function openRevenueModal() {
+        renderRevenueModal();
+        if (revenueModal) revenueModal.classList.add('active');
+    }
+
+    if (closeRevenueModalBtn) {
+        closeRevenueModalBtn.addEventListener('click', () => {
+            if (revenueModal) revenueModal.classList.remove('active');
+        });
+    }
+
+    window.addEventListener('click', (e) => {
+        if (e.target === revenueModal) {
+            revenueModal.classList.remove('active');
+        }
+    });
+
+    // --- KPI Navigation Triggers ---
+    const kpiSignalsBtn = document.getElementById('btn-kpi-signals');
+    if (kpiSignalsBtn) kpiSignalsBtn.addEventListener('click', openSignalsModal);
+
+    const kpiSuppliersBtn = document.getElementById('btn-kpi-suppliers');
+    if (kpiSuppliersBtn) kpiSuppliersBtn.addEventListener('click', openSuppliersModal);
+
+    // --- Exposed Suppliers Modal Logic ---
+    const suppliersModal = document.getElementById('suppliers-modal');
+    const closeSuppliersModalBtn = document.getElementById('close-suppliers-modal');
+
+    function renderSuppliersModal() {
+        const tbody = document.querySelector('#exposed-suppliers-table tbody');
+        if (!tbody) return;
+        
+        let html = '';
+        
+        // Sort suppliers by highest risk
+        const sortedSuppliers = [...state.suppliers].sort((a, b) => {
+            const sigA = state.signals.find(sig => sig.country === a.country);
+            const scoreA = calculateScore(a, sigA).finalScore;
+            
+            const sigB = state.signals.find(sig => sig.country === b.country);
+            const scoreB = calculateScore(b, sigB).finalScore;
+            
+            return scoreB - scoreA;
+        });
+
+        sortedSuppliers.forEach(s => {
+            const sig = state.signals.find(sig => sig.country === s.country);
+            const riskInfo = calculateScore(s, sig);
+            
+            let scoreBadge = 'badge-success';
+            if (riskInfo.finalScore > 75) scoreBadge = 'badge-danger';
+            else if (riskInfo.finalScore > 40) scoreBadge = 'badge-warning';
+
+            html += `
+                <tr>
+                    <td><strong>${s.name}</strong></td>
+                    <td>${s.country}</td>
+                    <td>${s.plant}</td>
+                    <td>${s.dependency}%</td>
+                    <td><span class="badge ${scoreBadge}">${riskInfo.finalScore.toFixed(1)}</span></td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function openSuppliersModal() {
+        renderSuppliersModal();
+        if (suppliersModal) suppliersModal.classList.add('active');
+    }
+
+    if (closeSuppliersModalBtn) {
+        closeSuppliersModalBtn.addEventListener('click', () => {
+            if (suppliersModal) suppliersModal.classList.remove('active');
+        });
+    }
+
+    window.addEventListener('click', (e) => {
+        if (e.target === suppliersModal) {
+            suppliersModal.classList.remove('active');
+        }
+    });
+
+    const kpiSkusBtn = document.getElementById('btn-kpi-skus');
+    if (kpiSkusBtn) kpiSkusBtn.addEventListener('click', openSkusModal);
+
+    const kpiRevenueBtn = document.getElementById('btn-kpi-revenue');
+    if (kpiRevenueBtn) kpiRevenueBtn.addEventListener('click', openRevenueModal);
+
+    const kpiActionsBtn = document.getElementById('btn-kpi-actions');
+    if (kpiActionsBtn) kpiActionsBtn.addEventListener('click', () => switchTab('actions'));
+
+    function updateKPICounters() {
+        const kpiSignals = document.getElementById('kpi-signals');
+        const kpiSuppliers = document.getElementById('kpi-suppliers');
+        const kpiSkus = document.getElementById('kpi-skus');
+        const kpiRevenue = document.getElementById('kpi-revenue');
+        const kpiActions = document.getElementById('kpi-actions');
+
+        if (kpiSignals) kpiSignals.textContent = state.signals.length;
+        if (kpiSuppliers) kpiSuppliers.textContent = state.suppliers.length;
+        if (kpiSkus) kpiSkus.textContent = state.suppliers.map(s => s.sku).filter((v, i, a) => a.indexOf(v) === i).length;
+        if (kpiActions) kpiActions.textContent = state.actions.length;
+        
+        if (kpiRevenue) {
+            const totalRev = state.suppliers.reduce((sum, s) => sum + s.revImpactM, 0);
+            kpiRevenue.textContent = `$${totalRev.toFixed(1)}M`;
+        }
+    }
+
     // --- Initial Execution ---
     renderWatchlist();
     renderActions();
     renderMasterScoreTable();
     renderHeatmapAndGraph();
     updateCalculator();
+    updateKPICounters();
 });
+

@@ -10,6 +10,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Apache ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/js/world.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="dark-theme">
@@ -65,6 +70,7 @@
                     <p class="header-subtitle">Converting raw external geopolitical signals & Hugging Face datasets into quantified risk decisions.</p>
                 </div>
                 <div class="header-actions">
+                    <button class="btn btn-outline" id="btn-rss-ingest" style="border-color: var(--color-sky); color: var(--color-sky);"><i class="fa-solid fa-satellite-dish"></i> Fetch Live RSS News</button>
                     <button class="btn btn-outline" id="btn-hf-ingest"><i class="fa-solid fa-cloud-arrow-down color-warning"></i> Ingest HuggingFace Dataset</button>
                     <button class="btn btn-outline" id="btn-export-report"><i class="fa-solid fa-file-export"></i> Export SCRM Report</button>
                     <button class="btn btn-primary" id="btn-trigger-sim"><i class="fa-solid fa-plus"></i> Inject Signal</button>
@@ -73,35 +79,35 @@
 
             <!-- Metric KPI Summary Bar -->
             <div class="kpi-grid">
-                <div class="kpi-card">
+                <div class="kpi-card" id="btn-kpi-signals" style="cursor: pointer;">
                     <div class="kpi-icon icon-blue"><i class="fa-solid fa-radio"></i></div>
                     <div class="kpi-data">
                         <span class="kpi-value" id="kpi-signals">8</span>
                         <span class="kpi-label">Active Signals</span>
                     </div>
                 </div>
-                <div class="kpi-card">
+                <div class="kpi-card" id="btn-kpi-suppliers" style="cursor: pointer;">
                     <div class="kpi-icon icon-amber"><i class="fa-solid fa-industry"></i></div>
                     <div class="kpi-data">
                         <span class="kpi-value" id="kpi-suppliers">14</span>
                         <span class="kpi-label">Exposed Suppliers</span>
                     </div>
                 </div>
-                <div class="kpi-card">
+                <div class="kpi-card" id="btn-kpi-skus" style="cursor: pointer;">
                     <div class="kpi-icon icon-red"><i class="fa-solid fa-box-open"></i></div>
                     <div class="kpi-data">
                         <span class="kpi-value" id="kpi-skus">26</span>
                         <span class="kpi-label">Critical SKUs Vulnerable</span>
                     </div>
                 </div>
-                <div class="kpi-card">
+                <div class="kpi-card" id="btn-kpi-revenue" style="cursor: pointer;">
                     <div class="kpi-icon icon-emerald"><i class="fa-solid fa-vault"></i></div>
                     <div class="kpi-data">
                         <span class="kpi-value" id="kpi-revenue">$95.0M</span>
                         <span class="kpi-label">Revenue Impact Exposure</span>
                     </div>
                 </div>
-                <div class="kpi-card">
+                <div class="kpi-card" id="btn-kpi-actions" style="cursor: pointer;">
                     <div class="kpi-icon icon-purple"><i class="fa-solid fa-gears"></i></div>
                     <div class="kpi-data">
                         <span class="kpi-value" id="kpi-actions">5</span>
@@ -334,26 +340,24 @@
 
             <!-- Tab 3: Geopolitical Heatmap & Entity Graph -->
             <section id="tab-heatmap" class="tab-page">
-                <div class="dashboard-grid">
-                    <!-- Global Risk Map -->
-                    <div class="glass-card grid-col-7">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-map-location-dot"></i> Global Geopolitical Risk Heatmap</h3>
-                            <span class="subtitle-text">Source Country Vulnerability</span>
+                <!-- Heatmap and Graph Grid -->
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <!-- Left: Geo Heatmap -->
+                    <div class="glass-card" style="flex: 2; position: relative;">
+                        <h3><i class="fa-solid fa-map-location-dot"></i> Global Geopolitical Risk Heatmap</h3>
+                        <span class="subtitle-text" style="float: right; margin-top: -30px;">Source Country Vulnerability</span>
+                        <div id="heatmap-container" style="width: 100%; height: 450px; margin-top: 20px;">
+                            <!-- Map rendered by ECharts -->
                         </div>
-                        <div class="geo-map-container" id="geo-map-visual">
-                            <!-- Rendered via JS -->
-                        </div>
+                        <p class="subtitle-text" style="margin-top: 15px; font-size: 11px;"><i class="fa-solid fa-globe"></i> Heatmap weighted by supplier spend share, inventory cover, and Hugging Face event feeds.</p>
                     </div>
 
                     <!-- Supply Network Graph Inspector -->
-                    <div class="glass-card grid-col-5">
-                        <div class="card-header">
-                            <h3><i class="fa-solid fa-diagram-nested"></i> Supply Network Dependency Graph</h3>
-                            <span class="subtitle-text">Country → Supplier → SKU → Plant</span>
-                        </div>
-                        <div class="network-graph-view" id="graph-view-container">
-                            <!-- Rendered via JS -->
+                    <div class="glass-card" style="flex: 1; max-width: 450px;">
+                        <h3><i class="fa-solid fa-network-wired"></i> Supply Network Dependencies</h3>
+                        <span class="subtitle-text" style="float: right; margin-top: -30px;">Direct Impact Flow</span>
+                        <div id="graph-view-container" style="width: 100%; height: 450px; margin-top: 20px; overflow-y: auto; padding-right: 10px;">
+                            <!-- Dependency Cards Rendered Here -->
                         </div>
                     </div>
                 </div>
@@ -361,6 +365,26 @@
 
             <!-- Tab 4: Live Signal Simulator -->
             <section id="tab-simulator" class="tab-page">
+                <!-- NEW DATA SOURCES CARD -->
+                <div class="glass-card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-satellite-dish"></i> Active Data Ingestion Sources</h3>
+                        <p>External endpoints monitored by the agent's NLP extraction layer.</p>
+                    </div>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid var(--color-emerald); padding: 15px; border-radius: 6px; flex: 1; min-width: 250px;">
+                            <h4 style="color: var(--color-emerald); margin: 0 0 5px 0;">BBC World News</h4>
+                            <p style="font-size: 0.85em; color: var(--color-slate); margin: 0 0 10px 0; font-family: monospace;">http://feeds.bbci.co.uk/news/world/rss.xml</p>
+                            <span class="badge badge-emerald"><i class="fa-solid fa-circle-check"></i> Live Polling Active</span>
+                        </div>
+                        <div style="background: rgba(245, 158, 11, 0.05); border: 1px solid var(--color-warning); padding: 15px; border-radius: 6px; flex: 1; min-width: 250px;">
+                            <h4 style="color: var(--color-warning); margin: 0 0 5px 0;">Hugging Face Datasets</h4>
+                            <p style="font-size: 0.85em; color: var(--color-slate); margin: 0 0 10px 0; font-family: monospace;">hf.co/datasets/alerterra/geopol_risks</p>
+                            <span class="badge badge-warning"><i class="fa-solid fa-hand"></i> Manual Ingest Only</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="dashboard-grid">
                     <!-- Event Generator Form -->
                     <div class="glass-card grid-col-5">
@@ -434,13 +458,24 @@
 
                     <!-- Simulator Live Logs & Output -->
                     <div class="glass-card grid-col-7">
-                        <div class="card-header">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                             <h3><i class="fa-solid fa-terminal"></i> Agent Execution Log & Score Propagation</h3>
                             <span class="badge badge-emerald">Live Output</span>
                         </div>
                         <div class="sim-output-console" id="sim-console-output">
                             <div class="console-line info">[System] Geopolitical Risk Agent initialized with Hugging Face Data Connector. Ready for signal ingestion.</div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- NEW: Dedicated Feed Box for English Articles -->
+                <div class="glass-card" style="margin-top: 20px;">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-newspaper"></i> Live Intelligence Feed</h3>
+                        <p>Raw external events ingested into the system in plain English format.</p>
+                    </div>
+                    <div id="live-news-feed" style="max-height: 500px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; padding: 10px;">
+                        <div style="color: var(--color-slate); font-style: italic; grid-column: 1 / -1;">Waiting for live news ingestion...</div>
                     </div>
                 </div>
             </section>
@@ -450,37 +485,56 @@
                 <div class="glass-card">
                     <div class="card-header">
                         <h3><i class="fa-solid fa-sliders"></i> Interactive What-If Risk Formula Calculator</h3>
-                        <p>Simulate how changing inventory cover or dual-sourcing alters the final risk score: $\text{Score} = \frac{\text{Prob} \times \text{Exposure} \times \text{Criticality}}{\text{Resilience}}$</p>
+                        <p>Simulate how changing inventory cover or dual-sourcing alters the final risk score:<br/>
+                        <strong style="color: var(--color-sky); font-family: monospace; font-size: 1.1em;">Score = (Prob &times; Exposure &times; Criticality) &divide; Resilience</strong></p>
                     </div>
 
                     <div class="calculator-box">
                         <div class="calc-inputs">
+                            <div class="calc-field" style="margin-bottom: 20px;">
+                                <label style="color: var(--color-sky);"><i class="fa-solid fa-building"></i> Select Supplier to Simulate:</label>
+                                <select id="calc-supplier-select" class="form-control" style="border-color: var(--color-sky);">
+                                    <option value="">-- Generic Simulation --</option>
+                                    <!-- Populated via JS -->
+                                </select>
+                            </div>
+                            <hr style="border-color: rgba(255,255,255,0.05); margin-bottom: 20px;">
                             <div class="calc-field">
-                                <label>Probability ($P$): <span id="val-p">0.85</span></label>
+                                <label>Probability (P): <span id="val-p">0.85</span></label>
                                 <input type="range" id="slider-p" min="0.1" max="1.0" step="0.05" value="0.85">
                             </div>
                             <div class="calc-field">
-                                <label>Dependency % ($E$): <span id="val-e">65%</span></label>
+                                <label>Dependency % (E): <span id="val-e">65%</span></label>
                                 <input type="range" id="slider-e" min="10" max="100" step="5" value="65">
                             </div>
                             <div class="calc-field">
-                                <label>Criticality / Stop Risk ($C$): <span id="val-c">0.80</span></label>
+                                <label>Criticality / Stop Risk (C): <span id="val-c">0.80</span></label>
                                 <input type="range" id="slider-c" min="0.1" max="1.0" step="0.05" value="0.80">
                             </div>
                             <div class="calc-field">
-                                <label>Inv Cover Days ($R$): <span id="val-r">12 Days</span></label>
+                                <label>Inv Cover Days (R): <span id="val-r">12 Days</span></label>
                                 <input type="range" id="slider-r" min="2" max="60" step="1" value="12">
                             </div>
                             <div class="calc-field">
-                                <label>Alternate Sources ($R$): <span id="val-alt">0 Vendors</span></label>
+                                <label>Alternate Sources (R): <span id="val-alt">0 Vendors</span></label>
                                 <input type="range" id="slider-alt" min="0" max="3" step="1" value="0">
                             </div>
                         </div>
-                        <div class="calc-result-card">
-                            <span class="calc-title">Calculated Risk Score</span>
+                        <div class="calc-result-card" style="display: flex; flex-direction: column; justify-content: center;">
+                            <span class="calc-title">Final Risk Score</span>
                             <div class="calc-score-display" id="calc-result-score">72.4</div>
                             <div class="calc-badge badge-danger" id="calc-result-level">Critical Exposure</div>
-                            <p id="calc-result-formula" class="calc-subtext"></p>
+                            
+                            <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); width: 100%; text-align: left;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="color: #94a3b8; font-size: 13px;">Gross Risk (P &times; E &times; C):</span>
+                                    <strong id="calc-gross" style="color: #ef4444;">44.2</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="color: #94a3b8; font-size: 13px;">Resilience Factor:</span>
+                                    <strong id="calc-resilience" style="color: #10b981;">0.61</strong>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -525,9 +579,134 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Exposed Suppliers Modal -->
+            <div id="suppliers-modal" class="modal-overlay">
+                <div class="modal-content glass-card">
+                    <div class="modal-header">
+                        <h3><i class="fa-solid fa-building color-warning"></i> Exposed Suppliers Drill-Down</h3>
+                        <button class="btn btn-outline modal-close" id="close-suppliers-modal"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="subtitle-text" style="margin-bottom: 16px;">Detailed view of suppliers with risk exposure in the network.</p>
+                        <div class="table-responsive">
+                            <table class="data-table" id="exposed-suppliers-table">
+                                <thead>
+                                    <tr>
+                                        <th>Supplier Name</th>
+                                        <th>Country Hub</th>
+                                        <th>Target Plant</th>
+                                        <th>Dependency</th>
+                                        <th>Risk Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Rendered via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Signals Modal -->
+            <div id="signals-modal" class="modal-overlay">
+                <div class="modal-content glass-card">
+                    <div class="modal-header">
+                        <h3><i class="fa-solid fa-radio color-warning"></i> Active Geopolitical Signals Drill-Down</h3>
+                        <button class="btn btn-outline modal-close" id="close-signals-modal"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="subtitle-text" style="margin-bottom: 16px;">Detailed view of active signals and the critical SKUs they impact.</p>
+                        <div class="table-responsive">
+                            <table class="data-table" id="active-signals-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Source</th>
+                                        <th>Event Summary</th>
+                                        <th>Country</th>
+                                        <th>Trend</th>
+                                        <th>Impacted SKUs</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Critical SKUs Modal -->
+            <div id="skus-modal" class="modal-overlay">
+                <div class="modal-content glass-card">
+                    <div class="modal-header">
+                        <h3><i class="fa-solid fa-box-open color-red"></i> Critical SKUs Vulnerable</h3>
+                        <button class="btn btn-outline modal-close" id="close-skus-modal"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="subtitle-text" style="margin-bottom: 16px;">Detailed view of impacted SKUs and their supply chain dependencies.</p>
+                        <div class="table-responsive">
+                            <table class="data-table" id="skus-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU Name</th>
+                                        <th>Supplier</th>
+                                        <th>Country</th>
+                                        <th>Dependency</th>
+                                        <th>Inventory Cover</th>
+                                        <th>Risk Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revenue Impact Modal -->
+            <div id="revenue-modal" class="modal-overlay">
+                <div class="modal-content glass-card">
+                    <div class="modal-header">
+                        <h3><i class="fa-solid fa-vault color-emerald"></i> Revenue Impact Exposure Breakdown</h3>
+                        <button class="btn btn-outline modal-close" id="close-revenue-modal"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="subtitle-text" style="margin-bottom: 16px;">Breakdown of potential revenue at risk based on supplier dependency and SKU critical paths.</p>
+                        <div class="table-responsive">
+                            <table class="data-table" id="revenue-table">
+                                <thead>
+                                    <tr>
+                                        <th>Supplier Name</th>
+                                        <th>Target SKU</th>
+                                        <th>Dependency</th>
+                                        <th>Sole Source</th>
+                                        <th>Est. Revenue Impact</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="4" style="text-align: right; font-weight: bold;">Total Exposure:</td>
+                                        <td id="revenue-total-cell" style="font-weight: bold; color: var(--color-emerald);"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=18"></script>
 </body>
 </html>
+<script src="https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/js/world.js"></script>
