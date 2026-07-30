@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geopolitical Supply Chain Risk Decision Agent</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <div class="logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="logo-text">
+                    <h2>GeoRisk<span class="highlight">AI</span></h2>
+                    <span class="subtitle">Supply Chain Decision Agent</span>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-item active" data-tab="overview">
+                    <i class="fa-solid fa-chart-line"></i> Executive Overview
+                </button>
+                <button class="nav-item" data-tab="pipeline">
+                    <i class="fa-solid fa-diagram-project"></i> 5-Layer Pipeline Flow
+                </button>
+                <button class="nav-item" data-tab="heatmap">
+                    <i class="fa-solid fa-earth-americas"></i> Geo Heatmap & Graph
+                </button>
+                <button class="nav-item" data-tab="simulator">
+                    <i class="fa-solid fa-bolt"></i> Live Signal Simulator
+                </button>
+                <button class="nav-item" data-tab="scoring">
+                    <i class="fa-solid fa-calculator"></i> Risk Score Matrix
+                </button>
+                <button class="nav-item" data-tab="actions">
+                    <i class="fa-solid fa-list-check"></i> Action Orchestration
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="agent-status-card">
+                    <div class="status-indicator online"></div>
+                    <div class="status-info">
+                        <span class="status-title">Agent Engine Active</span>
+                        <span class="status-detail">Hugging Face & Open SCRM</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-title">
+                    <h1 id="page-title">Executive Risk Overview</h1>
+                    <p class="header-subtitle">Converting raw external geopolitical signals & Hugging Face datasets into quantified risk decisions.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-outline" id="btn-hf-ingest"><i class="fa-solid fa-cloud-arrow-down color-warning"></i> Ingest HuggingFace Dataset</button>
+                    <button class="btn btn-outline" id="btn-export-report"><i class="fa-solid fa-file-export"></i> Export SCRM Report</button>
+                    <button class="btn btn-primary" id="btn-trigger-sim"><i class="fa-solid fa-plus"></i> Inject Signal</button>
+                </div>
+            </header>
+
+            <!-- Metric KPI Summary Bar -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-blue"><i class="fa-solid fa-radio"></i></div>
+                    <div class="kpi-data">
+                        <span class="kpi-value" id="kpi-signals">8</span>
+                        <span class="kpi-label">Active Signals</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-amber"><i class="fa-solid fa-industry"></i></div>
+                    <div class="kpi-data">
+                        <span class="kpi-value" id="kpi-suppliers">14</span>
+                        <span class="kpi-label">Exposed Suppliers</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-red"><i class="fa-solid fa-box-open"></i></div>
+                    <div class="kpi-data">
+                        <span class="kpi-value" id="kpi-skus">26</span>
+                        <span class="kpi-label">Critical SKUs Vulnerable</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-emerald"><i class="fa-solid fa-vault"></i></div>
+                    <div class="kpi-data">
+                        <span class="kpi-value" id="kpi-revenue">$95.0M</span>
+                        <span class="kpi-label">Revenue Impact Exposure</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-purple"><i class="fa-solid fa-gears"></i></div>
+                    <div class="kpi-data">
+                        <span class="kpi-value" id="kpi-actions">5</span>
+                        <span class="kpi-label">Active Mitigation Actions</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Tab Content Sections -->
+
+            <!-- Tab 1: Executive Overview -->
+            <section id="tab-overview" class="tab-page active">
+                <div class="dashboard-grid">
+                    <!-- Left: Critical Alerts & Live Watchlist -->
+                    <div class="glass-card grid-col-8">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-triangle-exclamation color-warning"></i> High Exposure Watchlist</h3>
+                            <span class="badge badge-danger">Live SCRM Engine</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="watchlist-table">
+                                <thead>
+                                    <tr>
+                                        <th>Country</th>
+                                        <th>Supplier Name</th>
+                                        <th>Key SKU Impacted</th>
+                                        <th>Inv Cover</th>
+                                        <th>Dependency %</th>
+                                        <th>Risk Score</th>
+                                        <th>Action Triggered</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Right: Ingestion Connector Feed Overview -->
+                    <div class="glass-card grid-col-4">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-network-wired"></i> 5 Ingestion Connectors</h3>
+                            <span class="badge badge-info">Real-time</span>
+                        </div>
+                        <div class="connector-list">
+                            <div class="connector-item">
+                                <div class="connector-dot online"></div>
+                                <div class="connector-text">
+                                    <strong>Hugging Face Datasets Hub</strong>
+                                    <span>alerterra/geopolitical_risk_events, harisss/Supplychain</span>
+                                </div>
+                                <span class="connector-meta">Connected</span>
+                            </div>
+                            <div class="connector-item">
+                                <div class="connector-dot online"></div>
+                                <div class="connector-text">
+                                    <strong>Sanctions & Trade Feeds</strong>
+                                    <span>US OFAC, EU Trade Controls, Tariff DB</span>
+                                </div>
+                                <span class="connector-meta">Active</span>
+                            </div>
+                            <div class="connector-item">
+                                <div class="connector-dot online"></div>
+                                <div class="connector-text">
+                                    <strong>Open ERP & Logistics Master</strong>
+                                    <span>DataCo Supply Chain, CSV Master Import</span>
+                                </div>
+                                <span class="connector-meta">Loaded</span>
+                            </div>
+                            <div class="connector-item">
+                                <div class="connector-dot online"></div>
+                                <div class="connector-text">
+                                    <strong>Supplier Intelligence APIs</strong>
+                                    <span>Moody's Analytics, Dun & Bradstreet, EcoVadis</span>
+                                </div>
+                                <span class="connector-meta">Synced</span>
+                            </div>
+                            <div class="connector-item">
+                                <div class="connector-dot online"></div>
+                                <div class="connector-text">
+                                    <strong>Operational Unstructured</strong>
+                                    <span>Outlook Ingestion, Exception Notes & Logs</span>
+                                </div>
+                                <span class="connector-meta">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Overview Row: Recommended Playbooks -->
+                <div class="glass-card margin-top-md">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-list-check"></i> High Priority Action Interventions</h3>
+                        <span class="subtitle-text">ISO SCRM Playbook Triggers</span>
+                    </div>
+                    <div class="action-card-grid" id="top-actions-container">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 2: 5-Layer Pipeline Flow -->
+            <section id="tab-pipeline" class="tab-page">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <h3>5-Layer Decision Pipeline Architecture</h3>
+                        <p>How the agent converts raw Hugging Face datasets and geopolitical signals into automated risk interventions.</p>
+                    </div>
+                    <div class="pipeline-flow-container">
+                        <!-- Layer 1 -->
+                        <div class="pipeline-step">
+                            <div class="step-num">Layer 1</div>
+                            <div class="step-icon"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+                            <h4>Signal Ingestion</h4>
+                            <p>Ingests Hugging Face Datasets (<code>alerterra/geopolitical_risk_events</code>), sanctions, tariffs, plus supplier notes.</p>
+                            <div class="step-tags">
+                                <span>HuggingFace</span><span>Sanctions</span><span>Port Alerts</span><span>Emails</span>
+                            </div>
+                        </div>
+                        <div class="pipeline-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+
+                        <!-- Layer 2 -->
+                        <div class="pipeline-step">
+                            <div class="step-num">Layer 2</div>
+                            <div class="step-icon"><i class="fa-solid fa-tags"></i></div>
+                            <h4>Event Classifier</h4>
+                            <p>LLM/Classifier tags events into standardized categories: Sanctions, Cyber, Labor Unrest, Border Closure, Military.</p>
+                            <div class="step-tags">
+                                <span>Tagging</span><span>NLP Extract</span><span>Confidence %</span>
+                            </div>
+                        </div>
+                        <div class="pipeline-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+
+                        <!-- Layer 3 -->
+                        <div class="pipeline-step">
+                            <div class="step-num">Layer 3</div>
+                            <div class="step-icon"><i class="fa-solid fa-diagram-next"></i></div>
+                            <h4>Network Entity Linker</h4>
+                            <p>Traverses knowledge graph: Country → Supplier → Site → Port → Material → SKU → Plant Impact.</p>
+                            <div class="step-tags">
+                                <span>Graph Traversal</span><span>Master Data</span><span>BOM Link</span>
+                            </div>
+                        </div>
+                        <div class="pipeline-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+
+                        <!-- Layer 4 -->
+                        <div class="pipeline-step">
+                            <div class="step-num">Layer 4</div>
+                            <div class="step-icon"><i class="fa-solid fa-calculator"></i></div>
+                            <h4>Risk Scoring Math</h4>
+                            <p>Computes risk score: $\text{Score} = \frac{\text{Prob} \times \text{Exp} \times \text{Crit}}{\text{Resilience}}$</p>
+                            <div class="step-tags">
+                                <span>Vulnerability</span><span>Criticality</span><span>Resilience</span>
+                            </div>
+                        </div>
+                        <div class="pipeline-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+
+                        <!-- Layer 5 -->
+                        <div class="pipeline-step">
+                            <div class="step-num">Layer 5</div>
+                            <div class="step-icon"><i class="fa-solid fa-bolt"></i></div>
+                            <h4>Action Orchestration</h4>
+                            <p>Triggers ISO SCRM playbooks: Buffer build, reroute, dual-source qualification, procurement escalation.</p>
+                            <div class="step-tags">
+                                <span>Playbooks</span><span>Planner Copilot</span><span>Workflow</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Source-to-Table Mapping Reference Card -->
+                <div class="glass-card margin-top-md">
+                    <div class="card-header">
+                        <h3>Source-to-Table Data Ingestion Mapping</h3>
+                        <span class="badge badge-neutral">Data Schema</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Connector Type</th>
+                                    <th>Source System</th>
+                                    <th>Fields Ingested</th>
+                                    <th>Target Entity Schema</th>
+                                    <th>Target Layer</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge badge-info">Hugging Face Datasets</span></td>
+                                    <td>Hugging Face Hub (<code>alerterra/geopolitical_risk_events</code>)</td>
+                                    <td><code>event_id, date, event_type, country, severity, summary</code></td>
+                                    <td><code>Event Schema</code></td>
+                                    <td>Layer 1 & 2</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-info">Open Supply Chain Data</span></td>
+                                    <td>Hugging Face (<code>harisss/Supplychain</code>), DataCo CSV</td>
+                                    <td><code>supplier_id, sku, dependency_pct, inv_days_cover, spend_share</code></td>
+                                    <td><code>Exposure Schema</code></td>
+                                    <td>Layer 3</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-info">Logistics Execution</span></td>
+                                    <td>Project44, FourKites, Port API</td>
+                                    <td><code>lane_id, origin_port, dest_port, delay_days, status</code></td>
+                                    <td><code>Lane Exposure Schema</code></td>
+                                    <td>Layer 3 & 4</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-info">Supplier Intelligence</span></td>
+                                    <td>Moody's, Dun & Bradstreet, EcoVadis</td>
+                                    <td><code>credit_score, esg_score, financial_distress_prob</code></td>
+                                    <td><code>Supplier Profile Schema</code></td>
+                                    <td>Layer 4</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-info">Unstructured Data</span></td>
+                                    <td>Outlook Ingestion, Exception Notes, Logs</td>
+                                    <td><code>email_id, body_text, sku_ref, delay_reason, sentiment</code></td>
+                                    <td><code>Unstructured Signal Schema</code></td>
+                                    <td>Layer 1 & 2</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 3: Geopolitical Heatmap & Entity Graph -->
+            <section id="tab-heatmap" class="tab-page">
+                <div class="dashboard-grid">
+                    <!-- Global Risk Map -->
+                    <div class="glass-card grid-col-7">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-map-location-dot"></i> Global Geopolitical Risk Heatmap</h3>
+                            <span class="subtitle-text">Source Country Vulnerability</span>
+                        </div>
+                        <div class="geo-map-container" id="geo-map-visual">
+                            <!-- Rendered via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Supply Network Graph Inspector -->
+                    <div class="glass-card grid-col-5">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-diagram-nested"></i> Supply Network Dependency Graph</h3>
+                            <span class="subtitle-text">Country → Supplier → SKU → Plant</span>
+                        </div>
+                        <div class="network-graph-view" id="graph-view-container">
+                            <!-- Rendered via JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 4: Live Signal Simulator -->
+            <section id="tab-simulator" class="tab-page">
+                <div class="dashboard-grid">
+                    <!-- Event Generator Form -->
+                    <div class="glass-card grid-col-5">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-bolt color-warning"></i> Geopolitical Event Simulator</h3>
+                            <p>Inject mock geopolitical events or load Hugging Face datasets to observe score propagation.</p>
+                        </div>
+                        <form id="signal-sim-form">
+                            <div class="form-group">
+                                <label>Quick Event Presets:</label>
+                                <select id="sim-preset" class="form-control">
+                                    <option value="custom">-- Custom Event --</option>
+                                    <option value="preset-hf">Hugging Face Event: Semiconductor Export Restriction</option>
+                                    <option value="preset-1">Taiwan Semiconductor Tension & Export Restriction</option>
+                                    <option value="preset-2">Shanghai Port Strike & Logistics Bottleneck</option>
+                                    <option value="preset-3">EU Special Gas Supply Disruption (Germany)</option>
+                                    <option value="preset-4">Red Sea Maritime Freight Blockade</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Event Category / Type:</label>
+                                <select id="sim-event-type" class="form-control">
+                                    <option value="Sanctions">Sanctions & Export Restrictions</option>
+                                    <option value="Trade Restriction">Tariffs & Customs Barriers</option>
+                                    <option value="Port Closure">Port Closure & Maritime Disruption</option>
+                                    <option value="Labor Unrest">Labor Unrest & Strikes</option>
+                                    <option value="Military Conflict">Military & Border Conflict</option>
+                                    <option value="Cyberattack">Critical Infrastructure Cyberattack</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Target Country:</label>
+                                <select id="sim-country" class="form-control">
+                                    <option value="TW">Taiwan (TW)</option>
+                                    <option value="CN">China (CN)</option>
+                                    <option value="DE">Germany (DE)</option>
+                                    <option value="NL">Netherlands (NL)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group col-6">
+                                    <label>Credibility (0-1):</label>
+                                    <input type="number" id="sim-credibility" class="form-control" min="0.1" max="1.0" step="0.05" value="0.90">
+                                </div>
+                                <div class="form-group col-6">
+                                    <label>Confidence (0-1):</label>
+                                    <input type="number" id="sim-confidence" class="form-control" min="0.1" max="1.0" step="0.05" value="0.85">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Escalation Trend:</label>
+                                <select id="sim-trend" class="form-control">
+                                    <option value="Rising">Rising Escalation</option>
+                                    <option value="Stable">Stable Exposure</option>
+                                    <option value="Decreasing">Decreasing Escalation</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Event Summary / Headline:</label>
+                                <textarea id="sim-summary" class="form-control" rows="3">Government announced unexpected export control quotas on raw precursor silicon materials.</textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-play"></i> Process Signal Through Pipeline</button>
+                        </form>
+                    </div>
+
+                    <!-- Simulator Live Logs & Output -->
+                    <div class="glass-card grid-col-7">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-terminal"></i> Agent Execution Log & Score Propagation</h3>
+                            <span class="badge badge-emerald">Live Output</span>
+                        </div>
+                        <div class="sim-output-console" id="sim-console-output">
+                            <div class="console-line info">[System] Geopolitical Risk Agent initialized with Hugging Face Data Connector. Ready for signal ingestion.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 5: Risk Score Matrix & What-If Calculator -->
+            <section id="tab-scoring" class="tab-page">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-sliders"></i> Interactive What-If Risk Formula Calculator</h3>
+                        <p>Simulate how changing inventory cover or dual-sourcing alters the final risk score: $\text{Score} = \frac{\text{Prob} \times \text{Exposure} \times \text{Criticality}}{\text{Resilience}}$</p>
+                    </div>
+
+                    <div class="calculator-box">
+                        <div class="calc-inputs">
+                            <div class="calc-field">
+                                <label>Probability ($P$): <span id="val-p">0.85</span></label>
+                                <input type="range" id="slider-p" min="0.1" max="1.0" step="0.05" value="0.85">
+                            </div>
+                            <div class="calc-field">
+                                <label>Dependency % ($E$): <span id="val-e">65%</span></label>
+                                <input type="range" id="slider-e" min="10" max="100" step="5" value="65">
+                            </div>
+                            <div class="calc-field">
+                                <label>Criticality / Stop Risk ($C$): <span id="val-c">0.80</span></label>
+                                <input type="range" id="slider-c" min="0.1" max="1.0" step="0.05" value="0.80">
+                            </div>
+                            <div class="calc-field">
+                                <label>Inv Cover Days ($R$): <span id="val-r">12 Days</span></label>
+                                <input type="range" id="slider-r" min="2" max="60" step="1" value="12">
+                            </div>
+                            <div class="calc-field">
+                                <label>Alternate Sources ($R$): <span id="val-alt">0 Vendors</span></label>
+                                <input type="range" id="slider-alt" min="0" max="3" step="1" value="0">
+                            </div>
+                        </div>
+                        <div class="calc-result-card">
+                            <span class="calc-title">Calculated Risk Score</span>
+                            <div class="calc-score-display" id="calc-result-score">72.4</div>
+                            <div class="calc-badge badge-danger" id="calc-result-level">Critical Exposure</div>
+                            <p id="calc-result-formula" class="calc-subtext"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Risk Score Master Table -->
+                <div class="glass-card margin-top-md">
+                    <div class="card-header">
+                        <h3>Master Risk Scoring Matrix</h3>
+                        <span class="subtitle-text">Current System Exposure Records</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="master-score-table">
+                            <thead>
+                                <tr>
+                                    <th>Supplier Name</th>
+                                    <th>Target SKU</th>
+                                    <th>Probability</th>
+                                    <th>Exposure</th>
+                                    <th>Criticality</th>
+                                    <th>Resilience</th>
+                                    <th>Final Score</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 6: Action Orchestration -->
+            <section id="tab-actions" class="tab-page">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-list-check"></i> Action Orchestration Board</h3>
+                        <p>ISO SCRM Treatment & Governance Workflow Queue</p>
+                    </div>
+                    <div class="action-board" id="action-board-full">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
