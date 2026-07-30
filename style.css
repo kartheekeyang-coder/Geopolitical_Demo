@@ -554,7 +554,7 @@ body.dark-theme {
 
 /* Geo Heatmap & Graph Styling */
 .geo-map-container {
-    height: 380px;
+    min-height: 380px;
     background: var(--bg-surface-elevated);
     border-radius: var(--radius-md);
     display: flex;
@@ -563,63 +563,365 @@ body.dark-theme {
     position: relative;
 }
 
+.geo-map-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+}
+
+.geo-map-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 6px;
+    z-index: 4;
+}
+
+.map-zoom-btn {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.9);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.geo-map-svg {
+    width: 100%;
+    height: 270px;
+    overflow: visible;
+}
+
+.geo-map-bg {
+    fill: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1;
+}
+
+.geo-map-land {
+    fill: rgba(77, 132, 255, 0.14);
+    stroke: rgba(255, 255, 255, 0.16);
+    stroke-width: 1.2;
+}
+
+.geo-grid-line {
+    stroke: rgba(255, 255, 255, 0.06);
+    stroke-width: 1;
+    stroke-dasharray: 3 5;
+}
+
+.geo-map-label {
+    fill: var(--text-secondary);
+    font-size: 11px;
+    font-family: var(--font-body);
+    text-anchor: middle;
+}
+
+.geo-map-pulse {
+    animation: pulseRing 2.2s ease-out infinite;
+    transform-origin: center;
+}
+
+@keyframes pulseRing {
+    0% {
+        opacity: 0.65;
+        transform: scale(0.9);
+    }
+    70% {
+        opacity: 0.1;
+        transform: scale(1.25);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.45);
+    }
+}
+
+.geo-map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.geo-map-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    z-index: 3;
+    max-width: 180px;
+}
+
+.geo-map-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.geo-map-tooltip span {
+    color: var(--accent-cyan);
+}
+
+.geo-link-group {
+    cursor: pointer;
+}
+
+.geo-link {
+    stroke-width: 2.2;
+    stroke-dasharray: 6 4;
+    animation: geoLinkDash 2.4s linear infinite;
+}
+
+.geo-timeline {
+    margin-top: 2px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.timeline-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.timeline-track {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    height: 70px;
+}
+
+.timeline-bar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.timeline-bar span {
+    width: 100%;
+    max-width: 18px;
+    background: linear-gradient(180deg, #6bb7ff 0%, #ff5d7a 100%);
+    border-radius: 999px 999px 4px 4px;
+    min-height: 10px;
+    animation: pulseBar 1.6s ease-in-out infinite;
+}
+
+.timeline-bar label {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+@keyframes geoLinkDash {
+    from {
+        stroke-dashoffset: 0;
+    }
+    to {
+        stroke-dashoffset: -20;
+    }
+}
+
+@keyframes pulseBar {
+    0%, 100% {
+        transform: scaleY(0.95);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scaleY(1.08);
+        opacity: 1;
+    }
+}
+
 .country-risk-list {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
-    margin-top: 16px;
+    margin-top: 12px;
 }
 
 .country-card {
     background: var(--bg-surface);
     border: 1px solid var(--border-glass);
     border-radius: var(--radius-md);
-    padding: 14px;
+    padding: 12px 14px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
+}
+
+.country-card.critical {
+    border-color: rgba(255, 93, 122, 0.45);
+}
+
+.country-card.elevated {
+    border-color: rgba(255, 184, 77, 0.45);
+}
+
+.country-card.moderate {
+    border-color: rgba(107, 183, 255, 0.45);
+}
+
+.country-card.low {
+    border-color: rgba(57, 217, 138, 0.45);
 }
 
 .country-flag-name {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     font-weight: 600;
+    font-size: 12px;
 }
 
 .network-graph-view {
-    height: 380px;
+    min-height: 380px;
     background: var(--bg-surface-elevated);
     border-radius: var(--radius-md);
     padding: 16px;
-    overflow-y: auto;
 }
 
-.graph-tree-node {
+.graph-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     margin-bottom: 12px;
-    padding-left: 12px;
-    border-left: 2px solid var(--accent-cyan);
+    gap: 8px;
+}
+
+.graph-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.graph-subtitle {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.graph-legend-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.graph-legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.graph-legend-dot.country { background: #6bb7ff; }
+.graph-legend-dot.supplier { background: #ffb84d; }
+.graph-legend-dot.sku { background: #39d98a; }
+.graph-legend-dot.plant { background: #7c3aed; }
+
+.graph-svg-shell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.graph-svg {
+    width: 100%;
+    height: 320px;
+}
+
+.graph-svg-bg {
+    fill: rgba(255, 255, 255, 0.03);
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1;
+}
+
+.graph-node-box {
+    fill: rgba(8, 30, 54, 0.96);
+    stroke: rgba(59, 130, 246, 0.35);
+    stroke-width: 1.5;
+}
+
+.graph-node-stage {
+    font-size: 10px;
+    fill: #7dd3fc;
+    text-anchor: middle;
 }
 
 .graph-node-title {
-    font-weight: 600;
-    font-size: 13px;
-    color: var(--accent-cyan);
-}
-
-.graph-node-children {
-    margin-top: 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding-left: 12px;
-}
-
-.graph-node-child {
     font-size: 12px;
-    color: var(--text-secondary);
-    display: flex;
-    justify-content: space-between;
+    fill: var(--text-primary);
+    font-weight: 700;
+    text-anchor: middle;
+}
+
+.graph-node-detail {
+    font-size: 10px;
+    fill: var(--text-muted);
+    text-anchor: middle;
+}
+
+.graph-node-score {
+    font-size: 11px;
+    fill: #ffc107;
+    text-anchor: middle;
+    font-weight: 600;
+}
+
+.graph-edge {
+    stroke: rgba(59, 130, 246, 0.55);
+    stroke-width: 2;
+    stroke-dasharray: 6 5;
+}
+
+.graph-edge {
+    stroke: rgba(107, 183, 255, 0.35);
+    stroke-width: 2;
+    stroke-dasharray: 5 4;
+}
+
+.graph-node-circle {
+    fill: rgba(12, 136, 255, 0.18);
+    stroke: var(--accent-cyan);
+    stroke-width: 2;
+}
+
+.graph-node-title {
+    fill: var(--accent-cyan);
+    font-size: 13px;
+    font-weight: 600;
+    text-anchor: middle;
+}
+
+.graph-node-body {
+    fill: var(--text-primary);
+    font-size: 11px;
+    text-anchor: middle;
+}
+
+.graph-node-meta {
+    fill: var(--text-muted);
+    font-size: 10px;
+    text-anchor: middle;
 }
 
 /* Forms & Simulator */

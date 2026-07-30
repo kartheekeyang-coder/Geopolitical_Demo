@@ -323,56 +323,254 @@ document.addEventListener('DOMContentLoaded', () => {
         const mapContainer = document.getElementById('geo-map-visual');
         const graphContainer = document.getElementById('graph-view-container');
 
+        const countryRiskData = state.suppliers.reduce((acc, sup) => {
+            const matchingSignal = state.signals.find(s => s.country === sup.country);
+            const score = calculateScore(sup, matchingSignal);
+            const entry = acc[sup.country] || { country: sup.country, score: 0, suppliers: [], label: '' };
+            entry.score += score.finalScore;
+            entry.suppliers.push({ name: sup.name, dependency: sup.dependency, invCover: sup.invCover });
+            acc[sup.country] = entry;
+            return acc;
+        }, {});
+
+        const countryEntries = Object.values(countryRiskData).map(entry => ({
+            ...entry,
+            avgScore: Math.round((entry.score / entry.suppliers.length) * 10) / 10,
+            label: entry.country === 'TW' ? 'Taiwan' : entry.country === 'CN' ? 'China' : entry.country === 'DE' ? 'Germany' : 'Netherlands'
+        })).sort((a, b) => b.avgScore - a.avgScore);
+
+        const defaultPositions = {
+            TW: { x: 180, y: 140 },
+            CN: { x: 315, y: 155 },
+            DE: { x: 430, y: 138 },
+            NL: { x: 455, y: 120 }
+        };
+
+        const connectionTargets = {
+            TW: { x: 224, y: 220 },
+            CN: { x: 349, y: 220 },
+            DE: { x: 468, y: 220 },
+            NL: { x: 500, y: 210 }
+        };
+
+        const mapState = window.__geoMapView || (window.__geoMapView = { zoom: 1, panX: 0, panY: 0, positions: {} });
+        const positions = {};
+        Object.keys(defaultPositions).forEach(country => {
+            const saved = mapState.positions[country];
+            positions[country] = saved ? { x: saved.x, y: saved.y } : { ...defaultPositions[country] };
+        });
+
         if (mapContainer) {
-            mapContainer.innerHTML = `
-                <div class="country-risk-list">
-                    <div class="country-card">
-                        <div class="country-flag-name">
-                            <i class="fa-solid fa-flag color-warning"></i> Taiwan (TW)
-                        </div>
-                        <span class="badge badge-danger">Critical Risk (Score: 78.2)</span>
+            const mapMarkup = `
+                <div class="geo-map-shell">
+                    <div class="geo-map-controls">
+                        <button class="map-zoom-btn" data-zoom="in">+</button>
+                        <button class="map-zoom-btn" data-zoom="out">−</button>
                     </div>
-                    <div class="country-card">
-                        <div class="country-flag-name">
-                            <i class="fa-solid fa-flag color-warning"></i> China (CN)
-                        </div>
-                        <span class="badge badge-warning">Elevated Risk (Score: 54.0)</span>
+                    <svg class="geo-map-svg" viewBox="0 0 600 300" aria-label="Geopolitical risk heatmap">
+                        <rect x="20" y="20" width="560" height="260" rx="24" class="geo-map-bg"></rect>
+                        <g transform="translate(${mapState.panX} ${mapState.panY}) scale(${mapState.zoom})">
+                            <path d="M96 104c6-24 26-41 50-44l24-4 14 16 22 6 14-10 22 4 16 18 26 8 16-12 18 10-8 24-18 10-24 4-10 24-20 16-24-4-18 6-14-12-26-2-20-16-12-16-14-10z" class="geo-map-land"></path>
+                            <path d="M252 86c16-14 38-16 56-8l22 10 14-8 24 14 18-4 10 14-14 16-28 8-22 12-28 2-20-12-12-16-10-18z" class="geo-map-land"></path>
+                            <path d="M346 124c12-14 34-20 54-12l16 6 18-10 20 8 16 20-6 20-20 12-28-2-20 8-24-8-10-16z" class="geo-map-land"></path>
+                            <path d="M110 172c10-16 26-26 46-24l22 2 18-10 20 6 12 20-10 18-22 10-26-4-18 8-18-8-14-18z" class="geo-map-land"></path>
+                            <path d="M250 178c12-14 30-20 48-16l18 4 16-10 16 10 20 6-10 20-20 12-18-2-16 10-24-4-18-8-12-22z" class="geo-map-land"></path>
+                            <path d="M392 182c12-8 26-10 40-6l18 8 16-6 16 12 10 18-16 12-18-4-16 10-24-8-12-18z" class="geo-map-land"></path>
+                            <path d="M430 118c8-8 20-10 30-6l14 6 12-8 12 10 10 18-8 12-22 4-20-8-12-14z" class="geo-map-land"></path>
+                            <line x1="70" y1="70" x2="510" y2="70" class="geo-grid-line"></line>
+                            <line x1="70" y1="120" x2="510" y2="120" class="geo-grid-line"></line>
+                            <line x1="70" y1="180" x2="510" y2="180" class="geo-grid-line"></line>
+                            <line x1="70" y1="240" x2="510" y2="240" class="geo-grid-line"></line>
+                        </g>
+                        ${countryEntries.map(entry => {
+                            const pos = positions[entry.country] || defaultPositions[entry.country];
+                            const target = connectionTargets[entry.country] || { x: pos.x + 80, y: pos.y + 70 };
+                            const color = entry.avgScore >= 70 ? '#ff5d7a' : entry.avgScore >= 50 ? '#ffb84d' : entry.avgScore >= 25 ? '#6bb7ff' : '#39d98a';
+                            const radius = 18 + (entry.avgScore / 100) * 16;
+                            return `
+                                <g class="geo-link-group">
+                                    <line x1="${pos.x}" y1="${pos.y}" x2="${target.x}" y2="${target.y}" class="geo-link" stroke="${color}"></line>
+                                    <circle cx="${target.x}" cy="${target.y}" r="6" fill="${color}" opacity="0.9"></circle>
+                                    <g class="geo-country-node" data-country="${entry.country}" data-label="${entry.label}" data-score="${entry.avgScore}" data-suppliers="${entry.suppliers.length}" data-signal="${entry.suppliers.map(s => s.name).slice(0, 2).join(', ')}">
+                                        <circle cx="${pos.x}" cy="${pos.y}" r="${radius + 10}" fill="${color}" opacity="0.14" class="geo-map-pulse"></circle>
+                                        <circle cx="${pos.x}" cy="${pos.y}" r="${radius + 6}" fill="${color}" opacity="0.16"></circle>
+                                        <circle cx="${pos.x}" cy="${pos.y}" r="${radius}" fill="${color}" opacity="0.9"></circle>
+                                        <circle cx="${pos.x}" cy="${pos.y}" r="${radius - 6}" fill="#0f172a" opacity="0.95"></circle>
+                                    </g>
+                                    <text x="${pos.x}" y="${pos.y + 35}" class="geo-map-label">${entry.label} (${entry.country})</text>
+                                </g>`;
+                        }).join('')}
+                    </svg>
+                    <div class="geo-map-tooltip" id="geo-map-tooltip"></div>
+                    <div class="geo-map-legend">
+                        <span><i class="fa-solid fa-circle" style="color:#ff5d7a"></i> Critical</span>
+                        <span><i class="fa-solid fa-circle" style="color:#ffb84d"></i> Elevated</span>
+                        <span><i class="fa-solid fa-circle" style="color:#6bb7ff"></i> Moderate</span>
+                        <span><i class="fa-solid fa-circle" style="color:#39d98a"></i> Low</span>
                     </div>
-                    <div class="country-card">
-                        <div class="country-flag-name">
-                            <i class="fa-solid fa-flag"></i> Germany (DE)
+                    <div class="geo-timeline">
+                        <div class="timeline-label">Live risk pulse</div>
+                        <div class="timeline-track">
+                            ${countryEntries.map(entry => `
+                                <div class="timeline-bar">
+                                    <span style="height:${Math.max(18, entry.avgScore)}%"></span>
+                                    <label>${entry.country}</label>
+                                </div>
+                            `).join('')}
                         </div>
-                        <span class="badge badge-warning">Medium Risk (Score: 48.5)</span>
-                    </div>
-                    <div class="country-card">
-                        <div class="country-flag-name">
-                            <i class="fa-solid fa-flag"></i> Netherlands (NL)
-                        </div>
-                        <span class="badge badge-emerald">Low Risk (Score: 18.4)</span>
                     </div>
                 </div>
-                <div style="margin-top:20px; font-size:12px; color:var(--text-muted); text-align:center;">
-                    <i class="fa-solid fa-globe"></i> Heatmap weighted by supplier spend share, inventory cover, and Hugging Face event feeds.
+                <div class="country-risk-list">
+                    ${countryEntries.map(entry => {
+                        const severityClass = entry.avgScore >= 70 ? 'critical' : entry.avgScore >= 50 ? 'elevated' : entry.avgScore >= 25 ? 'moderate' : 'low';
+                        return `
+                            <div class="country-card ${severityClass}">
+                                <div class="country-flag-name">
+                                    <i class="fa-solid fa-flag"></i> ${entry.label} (${entry.country})
+                                </div>
+                                <span class="badge ${entry.avgScore >= 70 ? 'badge-danger' : entry.avgScore >= 50 ? 'badge-warning' : 'badge-info'}">Score: ${entry.avgScore}</span>
+                            </div>`;
+                    }).join('')}
                 </div>
             `;
+            mapContainer.innerHTML = mapMarkup;
+
+            const tooltip = document.getElementById('geo-map-tooltip');
+            const countryNodes = mapContainer.querySelectorAll('.geo-country-node');
+            const zoomButtons = mapContainer.querySelectorAll('.map-zoom-btn');
+
+            if (!window.__geoMapListenersBound) {
+                window.__geoMapListenersBound = true;
+                window.addEventListener('mousemove', (event) => {
+                    if (!window.__geoMapDragState) return;
+                    const svg = mapContainer.querySelector('svg');
+                    if (!svg) return;
+                    const rect = svg.getBoundingClientRect();
+                    const scaleFactorX = 600 / rect.width;
+                    const scaleFactorY = 300 / rect.height;
+                    const svgX = (event.clientX - rect.left) * scaleFactorX;
+                    const svgY = (event.clientY - rect.top) * scaleFactorY;
+                    const worldX = (svgX - mapState.panX) / mapState.zoom;
+                    const worldY = (svgY - mapState.panY) / mapState.zoom;
+                    mapState.positions[window.__geoMapDragState.country] = {
+                        x: Math.max(60, Math.min(540, worldX)),
+                        y: Math.max(60, Math.min(240, worldY))
+                    };
+                    renderHeatmapAndGraph();
+                });
+
+                window.addEventListener('mouseup', () => {
+                    window.__geoMapDragState = null;
+                });
+            }
+
+            zoomButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const direction = button.getAttribute('data-zoom');
+                    if (direction === 'in') {
+                        mapState.zoom = Math.min(2.2, mapState.zoom + 0.2);
+                    } else {
+                        mapState.zoom = Math.max(0.8, mapState.zoom - 0.2);
+                    }
+                    renderHeatmapAndGraph();
+                });
+            });
+
+            mapContainer.addEventListener('wheel', (event) => {
+                event.preventDefault();
+                if (event.deltaY < 0) {
+                    mapState.zoom = Math.min(2.2, mapState.zoom + 0.08);
+                } else {
+                    mapState.zoom = Math.max(0.8, mapState.zoom - 0.08);
+                }
+                renderHeatmapAndGraph();
+            }, { passive: false });
+
+            countryNodes.forEach(node => {
+                node.addEventListener('mousedown', (event) => {
+                    event.preventDefault();
+                    window.__geoMapDragState = { country: node.getAttribute('data-country') };
+                });
+
+                node.addEventListener('mouseenter', (event) => {
+                    const country = node.getAttribute('data-country');
+                    const label = node.getAttribute('data-label');
+                    const score = node.getAttribute('data-score');
+                    const suppliers = node.getAttribute('data-suppliers');
+                    const signal = node.getAttribute('data-signal');
+                    tooltip.innerHTML = `
+                        <strong>${label} (${country})</strong><br>
+                        Risk score: <span>${score}</span><br>
+                        Active suppliers: <span>${suppliers}</span><br>
+                        Key exposure: <span>${signal}</span>
+                    `;
+                    tooltip.classList.add('visible');
+                    const rect = mapContainer.getBoundingClientRect();
+                    tooltip.style.left = `${event.clientX - rect.left + 10}px`;
+                    tooltip.style.top = `${event.clientY - rect.top + 10}px`;
+                });
+
+                node.addEventListener('mousemove', (event) => {
+                    const rect = mapContainer.getBoundingClientRect();
+                    tooltip.style.left = `${event.clientX - rect.left + 10}px`;
+                    tooltip.style.top = `${event.clientY - rect.top + 10}px`;
+                });
+
+                node.addEventListener('mouseleave', () => {
+                    tooltip.classList.remove('visible');
+                });
+            });
         }
 
         if (graphContainer) {
-            graphContainer.innerHTML = state.suppliers.map(sup => `
-                <div class="graph-tree-node">
-                    <div class="graph-node-title"><i class="fa-solid fa-building"></i> Country: ${sup.country} → Supplier: ${sup.name}</div>
-                    <div class="graph-node-children">
-                        <div class="graph-node-child">
-                            <span><i class="fa-solid fa-box"></i> SKU: ${sup.sku}</span>
-                            <span>Dep: ${sup.dependency}%</span>
-                        </div>
-                        <div class="graph-node-child">
-                            <span><i class="fa-solid fa-industry"></i> Impacted Plant: ${sup.plant}</span>
-                            <span>Cover: ${sup.invCover}d</span>
-                        </div>
-                    </div>
+            const graphNodes = state.suppliers.slice(0, 4).map((sup, index) => {
+                const matchingSignal = state.signals.find(s => s.country === sup.country);
+                const score = calculateScore(sup, matchingSignal);
+                const positions = [
+                    { x: 95, y: 70 },
+                    { x: 285, y: 70 },
+                    { x: 95, y: 180 },
+                    { x: 285, y: 180 }
+                ];
+                const pos = positions[index] || { x: 190, y: 125 };
+                return `
+                    <g>
+                        <rect x="${pos.x - 70}" y="${pos.y - 35}" width="140" height="90" rx="14" class="graph-node-box"></rect>
+                        <text x="${pos.x}" y="${pos.y - 18}" class="graph-node-stage">Country • ${sup.country}</text>
+                        <text x="${pos.x}" y="${pos.y - 2}" class="graph-node-title">${sup.name}</text>
+                        <text x="${pos.x}" y="${pos.y + 14}" class="graph-node-detail">SKU: ${sup.sku}</text>
+                        <text x="${pos.x}" y="${pos.y + 28}" class="graph-node-detail">Plant: ${sup.plant}</text>
+                        <text x="${pos.x}" y="${pos.y + 42}" class="graph-node-score">Risk ${score.finalScore}</text>
+                    </g>`;
+            }).join('');
+
+            graphContainer.innerHTML = `
+                <div class="graph-header">
+                    <div class="graph-title">Supply Network Dependency Graph</div>
+                    <div class="graph-subtitle">Country → Supplier → SKU → Plant</div>
                 </div>
-            `).join('');
+                <div class="graph-legend-row">
+                    <span><span class="graph-legend-dot country"></span>Country</span>
+                    <span><span class="graph-legend-dot supplier"></span>Supplier</span>
+                    <span><span class="graph-legend-dot sku"></span>SKU</span>
+                    <span><span class="graph-legend-dot plant"></span>Plant</span>
+                </div>
+                <div class="graph-svg-shell">
+                    <svg class="graph-svg" viewBox="0 0 380 260" aria-label="Supply network dependency graph">
+                        <defs>
+                            <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                                <path d="M0,0 L8,4 L0,8 Z" fill="rgba(107, 183, 255, 0.85)" />
+                            </marker>
+                        </defs>
+                        <rect x="12" y="12" width="356" height="236" rx="18" class="graph-svg-bg"></rect>
+                        <line x1="145" y1="70" x2="235" y2="70" class="graph-edge" marker-end="url(#arrowhead)"></line>
+                        <line x1="145" y1="180" x2="235" y2="180" class="graph-edge" marker-end="url(#arrowhead)"></line>
+                        <line x1="95" y1="105" x2="95" y2="145" class="graph-edge" marker-end="url(#arrowhead)"></line>
+                        <line x1="285" y1="105" x2="285" y2="145" class="graph-edge" marker-end="url(#arrowhead)"></line>
+                        ${graphNodes}
+                    </svg>
+                </div>
+            `;
         }
     }
 
